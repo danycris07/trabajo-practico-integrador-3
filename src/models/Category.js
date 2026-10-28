@@ -8,7 +8,6 @@ const categorySchema = new mongoose.Schema(
       trim: true,
       minlength: 3,
       maxlength: 50,
-      unique: true,
     },
     description: {
       type: String,
@@ -25,6 +24,11 @@ const categorySchema = new mongoose.Schema(
     timestamps: true,
     versionKey: false,
   },
+);
+
+categorySchema.index(
+  { name: 1 },
+  { unique: true, partialFilterExpression: { deleted: false } },
 );
 
 categorySchema.virtual("events", {

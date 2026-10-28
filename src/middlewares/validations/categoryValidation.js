@@ -7,12 +7,12 @@ export const idCategoryValidation = [
 
 export const createCategoryValidation = [
   body("name")
-    .isString()
-    .withMessage("El nombre debe ser texto")
-    .bail()
     .trim()
-    .isLength({ min: 3, max: 50 })
-    .withMessage("El nombre debe tener entre 3 y 50 caracteres")
+    .notEmpty()
+    .withMessage("El nombre de la categoría es obligatorio")
+    .bail()
+    .isLength({ min: 3, max: 80 })
+    .withMessage("El nombre debe tener entre 3 y 80 caracteres")
     .bail()
     .custom(async (name) => {
       const category = await Category.findOne({
@@ -30,29 +30,27 @@ export const createCategoryValidation = [
   body("description")
     .optional()
     .isString()
-    .withMessage("La descripción debe ser texto")
+    .withMessage("La descripción debe ser un texto")
     .bail()
     .isLength({ max: 500 })
     .withMessage("La descripción no puede superar los 500 caracteres"),
 ];
 
 export const updateCategoryValidation = [
-  ...idCategoryValidation,
-
   body("name")
     .optional()
-    .isString()
-    .withMessage("El nombre debe ser texto")
-    .bail()
     .trim()
-    .isLength({ min: 3, max: 50 })
-    .withMessage("El nombre debe tener entre 3 y 50 caracteres")
+    .notEmpty()
+    .withMessage("El nombre no puede estar vacío")
+    .bail()
+    .isLength({ min: 3, max: 80 })
+    .withMessage("El nombre debe tener entre 3 y 80 caracteres")
     .bail()
     .custom(async (name, { req }) => {
       const category = await Category.findOne({
         name,
-        _id: { $ne: req.params.id },
         deleted: false,
+        _id: { $ne: req.params.id },
       });
 
       if (category) {
@@ -65,8 +63,27 @@ export const updateCategoryValidation = [
   body("description")
     .optional()
     .isString()
-    .withMessage("La descripción debe ser texto")
+    .withMessage("La descripción debe ser un texto")
     .bail()
     .isLength({ max: 500 })
     .withMessage("La descripción no puede superar los 500 caracteres"),
+];
+
+export const categoryExistsValidation = [
+  param("id")
+    .isMongoId()
+    .withMessage("El ID de la categoría no es válido")
+    .bail()
+    .custom(async (id) => {
+      const category = await Category.findOne({
+        _id: id,
+        deleted: false,
+      });
+
+      if (!category) {
+        throw new Error("Categoría no encontrada");
+      }
+
+      return true;
+    }),
 ];

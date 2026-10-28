@@ -1,23 +1,51 @@
-import { Router } from "express";
+import express from "express";
+
 import {
   getUsers,
   getUserById,
   updateUser,
   deleteUser,
 } from "../controllers/userController.js";
+
 import {
-  idUserValidation,
+  idParamValidation,
   updateUserValidation,
+  userExistsValidation,
 } from "../middlewares/validations/userValidation.js";
+
 import { validate } from "../middlewares/validate.js";
 import { auth } from "../middlewares/auth.js";
 import { authorizeRoles } from "../middlewares/authorizeRoles.js";
 
-export const router = Router();
+export const userRouter = express.Router();
 
-router.use(auth, authorizeRoles("ADMIN"));
+userRouter.get("/", auth, authorizeRoles("ADMIN"), getUsers);
 
-router.get("/", getUsers);
-router.get("/:id", idUserValidation, validate, getUserById);
-router.patch("/:id", updateUserValidation, validate, updateUser);
-router.delete("/:id", idUserValidation, validate, deleteUser);
+userRouter.get(
+  "/:id",
+  auth,
+  authorizeRoles("ADMIN"),
+  idParamValidation,
+  validate,
+  getUserById,
+);
+
+userRouter.patch(
+  "/:id",
+  auth,
+  authorizeRoles("ADMIN"),
+  idParamValidation,
+  userExistsValidation,
+  updateUserValidation,
+  validate,
+  updateUser,
+);
+
+userRouter.delete(
+  "/:id",
+  auth,
+  authorizeRoles("ADMIN"),
+  idParamValidation,
+  validate,
+  deleteUser,
+);

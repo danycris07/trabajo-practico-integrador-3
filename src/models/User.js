@@ -8,14 +8,12 @@ const userSchema = new mongoose.Schema(
       trim: true,
       minlength: 3,
       maxlength: 30,
-      unique: true,
     },
     email: {
       type: String,
       required: true,
       trim: true,
       lowercase: true,
-      unique: true,
     },
     password: {
       type: String,
@@ -37,6 +35,16 @@ const userSchema = new mongoose.Schema(
     timestamps: true,
     versionKey: false,
   },
+);
+
+userSchema.index(
+  { username: 1 },
+  { unique: true, partialFilterExpression: { deleted: false } },
+);
+
+userSchema.index(
+  { email: 1 },
+  { unique: true, partialFilterExpression: { deleted: false } },
 );
 
 userSchema.virtual("events", {

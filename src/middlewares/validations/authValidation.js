@@ -4,8 +4,11 @@ import { User } from "../../models/User.js";
 export const registerValidation = [
   body("username")
     .trim()
+    .notEmpty()
+    .withMessage("El nombre de usuario es obligatorio")
+    .bail()
     .isLength({ min: 3, max: 30 })
-    .withMessage("El nombre debe tener entre 3 y 30 caracteres")
+    .withMessage("El nombre de usuario debe tener entre 3 y 30 caracteres")
     .bail()
     .custom(async (username) => {
       const user = await User.findOne({
@@ -14,7 +17,7 @@ export const registerValidation = [
       });
 
       if (user) {
-        throw new Error("El nombre de usuario ya existe");
+        throw new Error("El nombre de usuario ya está registrado");
       }
 
       return true;
@@ -22,8 +25,11 @@ export const registerValidation = [
 
   body("email")
     .trim()
+    .notEmpty()
+    .withMessage("El email es obligatorio")
+    .bail()
     .isEmail()
-    .withMessage("El correo no es válido")
+    .withMessage("El email no es válido")
     .bail()
     .normalizeEmail()
     .custom(async (email) => {
@@ -33,7 +39,7 @@ export const registerValidation = [
       });
 
       if (user) {
-        throw new Error("El correo ya está registrado");
+        throw new Error("El email ya está registrado");
       }
 
       return true;
@@ -41,7 +47,7 @@ export const registerValidation = [
 
   body("password")
     .isString()
-    .withMessage("La contraseña debe ser texto")
+    .withMessage("La contraseña debe ser un texto")
     .bail()
     .isLength({ min: 8 })
     .withMessage("La contraseña debe tener al menos 8 caracteres"),
@@ -50,9 +56,11 @@ export const registerValidation = [
 export const loginValidation = [
   body("email")
     .trim()
-    .isEmail()
-    .withMessage("El correo no es válido")
+    .notEmpty()
+    .withMessage("El email es obligatorio")
     .bail()
+    .isEmail()
+    .withMessage("El email no es válido")
     .normalizeEmail(),
 
   body("password").notEmpty().withMessage("La contraseña es obligatoria"),

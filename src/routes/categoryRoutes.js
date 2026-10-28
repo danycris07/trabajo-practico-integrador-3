@@ -1,47 +1,59 @@
-import { Router } from "express";
+import express from "express";
+
 import {
   getCategories,
   getCategoryById,
-  getCategoryEvents,
   createCategory,
   updateCategory,
   deleteCategory,
 } from "../controllers/categoryController.js";
+
 import {
   idCategoryValidation,
   createCategoryValidation,
   updateCategoryValidation,
+  categoryExistsValidation,
 } from "../middlewares/validations/categoryValidation.js";
+
 import { validate } from "../middlewares/validate.js";
 import { auth } from "../middlewares/auth.js";
 import { authorizeRoles } from "../middlewares/authorizeRoles.js";
 
-export const router = Router();
+export const categoryRouter = express.Router();
 
-router.use(auth);
+categoryRouter.get("/", auth, getCategories);
 
-router.get("/", getCategories);
-router.get("/:id/events", idCategoryValidation, validate, getCategoryEvents);
-router.get("/:id", idCategoryValidation, validate, getCategoryById);
+categoryRouter.get(
+  "/:id",
+  auth,
+  idCategoryValidation,
+  validate,
+  getCategoryById,
+);
 
-router.post(
+categoryRouter.post(
   "/",
+  auth,
   authorizeRoles("ADMIN"),
   createCategoryValidation,
   validate,
   createCategory,
 );
 
-router.patch(
+categoryRouter.patch(
   "/:id",
+  auth,
   authorizeRoles("ADMIN"),
+  idCategoryValidation,
+  categoryExistsValidation,
   updateCategoryValidation,
   validate,
   updateCategory,
 );
 
-router.delete(
+categoryRouter.delete(
   "/:id",
+  auth,
   authorizeRoles("ADMIN"),
   idCategoryValidation,
   validate,

@@ -1,5 +1,4 @@
 import { body, param } from "express-validator";
-import mongoose from "mongoose";
 import { Event } from "../../models/Event.js";
 import { Category } from "../../models/Category.js";
 
