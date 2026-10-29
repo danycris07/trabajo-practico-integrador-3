@@ -40,7 +40,7 @@ categoryRouter.post(
   createCategory,
 );
 
-categoryRouter.patch(
+categoryRouter.put(
   "/:id",
   auth,
   authorizeRoles("ADMIN"),

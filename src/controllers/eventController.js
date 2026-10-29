@@ -127,11 +127,14 @@ export const updateEvent = async (req, res) => {
       resource: event,
     });
   } catch (error) {
-    return res.status(500).json({
-      message: "Error al actualizar el evento",
-    });
+  console.error("Error al actualizar el evento:", error);
+
+  return res.status(500).json({
+    message: "Error al actualizar el evento",
+    error: error.message,
+  });
   }
-};
+}
 
 export const deleteEvent = async (req, res) => {
   try {

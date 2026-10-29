@@ -30,7 +30,7 @@ userRouter.get(
   getUserById,
 );
 
-userRouter.patch(
+userRouter.put(
   "/:id",
   auth,
   authorizeRoles("ADMIN"),

@@ -113,13 +113,13 @@ export const updateEventValidation = [
     .withMessage("La ubicación debe ser un objeto"),
 
   body("location.name")
-    .if(body("location").exists())
+    .optional()
     .trim()
     .notEmpty()
     .withMessage("El nombre del lugar es obligatorio"),
 
   body("location.address")
-    .if(body("location").exists())
+    .optional()
     .trim()
     .notEmpty()
     .withMessage("La dirección del lugar es obligatoria"),
@@ -144,7 +144,7 @@ export const updateEventValidation = [
 
   body("status")
     .optional()
-    .isIn(["PROGRAMADO", "CANCELADO", "FINALIZADO"])
+    .isIn(["PENDING", "APPROVED", "CANCELLED"])
     .withMessage("El estado del evento no es válido"),
 ];
 

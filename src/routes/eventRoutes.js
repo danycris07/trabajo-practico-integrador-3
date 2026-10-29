@@ -29,7 +29,7 @@ eventRouter.get("/:id", auth, idEventValidation, validate, getEventById);
 
 eventRouter.post("/", auth, createEventValidation, validate, createEvent);
 
-eventRouter.patch(
+eventRouter.put(
   "/:id",
   auth,
   idEventValidation,
