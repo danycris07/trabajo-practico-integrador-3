@@ -6,35 +6,36 @@ const categorySchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      minlength: 3,
-      maxlength: 50,
+      minlength: 2,
+      maxlength: 30,
     },
     description: {
       type: String,
       trim: true,
-      maxlength: 500,
-      default: "",
+      maxlength: 200,
     },
-    deleted: {
-      type: Boolean,
-      default: false,
+    deletedAt: {
+      type: Date,
+      default: null,
     },
   },
   {
     timestamps: true,
     versionKey: false,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   },
 );
 
 categorySchema.index(
   { name: 1 },
-  { unique: true, partialFilterExpression: { deleted: false } },
+  { unique: true, partialFilterExpression: { deletedAt: null } },
 );
 
 categorySchema.virtual("events", {
   ref: "Event",
   localField: "_id",
-  foreignField: "category",
+  foreignField: "categories",
 });
 
 export const Category = mongoose.model("Category", categorySchema);

@@ -5,9 +5,10 @@ const userSchema = new mongoose.Schema(
     username: {
       type: String,
       required: true,
+      unique: true,
       trim: true,
       minlength: 3,
-      maxlength: 30,
+      maxlength: 20,
     },
     email: {
       type: String,
@@ -23,34 +24,56 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["ADMIN", "USER"],
-      default: "USER",
+      enum: ["admin", "user"],
+      default: "user",
     },
-    deleted: {
-      type: Boolean,
-      default: false,
+    profile: {
+      firstName: {
+        type: String,
+        required: true,
+        minlength: 2,
+        maxlength: 50,
+      },
+      lastName: {
+        type: String,
+        required: true,
+        minlength: 2,
+        maxlength: 50,
+      },
+      birthDate: {
+        type: Date,
+      },
+      phone: {
+        type: String,
+      },
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
     },
   },
   {
     timestamps: true,
     versionKey: false,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   },
 );
 
 userSchema.index(
   { username: 1 },
-  { unique: true, partialFilterExpression: { deleted: false } },
+  { unique: true, partialFilterExpression: { deletedAt: null } },
 );
 
 userSchema.index(
   { email: 1 },
-  { unique: true, partialFilterExpression: { deleted: false } },
+  { unique: true, partialFilterExpression: { deletedAt: null } },
 );
 
 userSchema.virtual("events", {
   ref: "Event",
   localField: "_id",
-  foreignField: "creator",
+  foreignField: "organizer",
 });
 
 export const User = mongoose.model("User", userSchema);

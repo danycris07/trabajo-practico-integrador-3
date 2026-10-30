@@ -1,53 +1,81 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
-const eventSchema = new mongoose.Schema({
-  title: {
-    type: String,
-    required: true
-  },
-  description: {
-    type: String,
-    required: true
-  },
-  date: {
-    type: Date,
-    required: true
-  },
-  time: {
-    type: String,
-    required: true
-  },
-  location: {
-    name: {
+const eventSchema = new mongoose.Schema(
+  {
+    title: {
       type: String,
-      required: true
+      unique: true,
+      required: true,
+      minlength: 3,
+      maxlength: 150,
     },
-    address: {
+    description: {
       type: String,
-      required: true
-    }
+      required: true,
+      minlength: 20,
+    },
+    startDate: {
+      type: Date,
+      required: true,
+    },
+    endDate: {
+      type: Date,
+      required: true,
+    },
+    capacity: {
+      type: Number,
+      min: 1,
+      default: 0,
+    },
+    price: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
+    status: {
+      type: String,
+      enum: ["scheduled", "cancelled", "finished"],
+      default: "scheduled",
+    },
+    location: {
+      venue: {
+        type: String,
+        required: true,
+        minlength: 3,
+        maxlength: 100,
+      },
+      address: {
+        type: String,
+        required: true,
+        minlength: 5,
+        maxlength: 150,
+      },
+      city: {
+        type: String,
+        required: true,
+        minlength: 2,
+        maxlength: 50,
+      },
+    },
+    categories: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Category",
+      },
+    ],
+    organizer: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    deleted: {
+      type: Boolean,
+      default: false,
+    },
   },
-  category: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Category',
-    required: true
+  {
+    timestamps: true,
   },
-  creator: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  status: {
-    type: String,
-    enum: ['PENDING', 'APPROVED', 'CANCELLED'],
-    default: 'PENDING'
-  },
-  deleted: {
-    type: Boolean,
-    default: false
-  }
-}, {
-  timestamps: true
-});
+);
 
-export const Event = mongoose.model('Event', eventSchema);
+export const Event = mongoose.model("Event", eventSchema);
