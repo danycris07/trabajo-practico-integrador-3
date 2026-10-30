@@ -1,23 +1,19 @@
 import { body, param } from "express-validator";
 import { Category } from "../../models/Category.js";
 
-export const idCategoryValidation = [
-  param("id").isMongoId().withMessage("El ID de la categoría no es válido"),
-];
-
 export const createCategoryValidation = [
   body("name")
     .trim()
     .notEmpty()
     .withMessage("El nombre de la categoría es obligatorio")
     .bail()
-    .isLength({ min: 3, max: 80 })
-    .withMessage("El nombre debe tener entre 3 y 80 caracteres")
+    .isLength({ min: 2, max: 30 }) 
+    .withMessage("El nombre debe tener entre 2 y 30 caracteres")
     .bail()
     .custom(async (name) => {
       const category = await Category.findOne({
         name,
-        deleted: false,
+        deletedAt: null, 
       });
 
       if (category) {
@@ -28,12 +24,13 @@ export const createCategoryValidation = [
     }),
 
   body("description")
-    .optional()
+    .optional({ values: "falsy" }) 
+    .trim()
     .isString()
     .withMessage("La descripción debe ser un texto")
     .bail()
-    .isLength({ max: 500 })
-    .withMessage("La descripción no puede superar los 500 caracteres"),
+    .isLength({ max: 200 }) 
+    .withMessage("La descripción no puede superar los 200 caracteres"),
 ];
 
 export const updateCategoryValidation = [
@@ -43,14 +40,15 @@ export const updateCategoryValidation = [
     .notEmpty()
     .withMessage("El nombre no puede estar vacío")
     .bail()
-    .isLength({ min: 3, max: 80 })
-    .withMessage("El nombre debe tener entre 3 y 80 caracteres")
+    .isLength({ min: 2, max: 30 }) 
+    .withMessage("El nombre debe tener entre 2 y 30 caracteres")
     .bail()
     .custom(async (name, { req }) => {
+      const idCategory = req.params.id; 
       const category = await Category.findOne({
         name,
-        deleted: false,
-        _id: { $ne: req.params.id },
+        deletedAt: null, 
+        _id: { $ne: idCategory }, 
       });
 
       if (category) {
@@ -61,12 +59,13 @@ export const updateCategoryValidation = [
     }),
 
   body("description")
-    .optional()
+    .optional({ values: "falsy" }) 
+    .trim()
     .isString()
     .withMessage("La descripción debe ser un texto")
     .bail()
-    .isLength({ max: 500 })
-    .withMessage("La descripción no puede superar los 500 caracteres"),
+    .isLength({ max: 200 }) 
+    .withMessage("La descripción no puede superar los 200 caracteres"),
 ];
 
 export const categoryExistsValidation = [
@@ -77,7 +76,7 @@ export const categoryExistsValidation = [
     .custom(async (id) => {
       const category = await Category.findOne({
         _id: id,
-        deleted: false,
+        deletedAt: null, 
       });
 
       if (!category) {

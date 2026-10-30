@@ -68,9 +68,9 @@ const eventSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    deleted: {
-      type: Boolean,
-      default: false,
+    deletedAt: {
+      type: Date,
+      default: null,
     },
   },
   {
