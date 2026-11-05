@@ -47,13 +47,20 @@ export const registerValidation = [
 
   body("password")
     .notEmpty()
-    .withMessage("La contraseña es obligatoria")
-    .bail()
-    .isString()
-    .withMessage("La contraseña debe ser un texto")
-    .bail()
+    .withMessage("En campo password no debe estar vacio")
     .isLength({ min: 8 })
-    .withMessage("La contraseña debe tener al menos 8 caracteres"),
+    .withMessage("La contraseña debe tener al menos 8 caracteres")
+    .matches(/[A-Z]/)
+    .withMessage("Debe contener al menos una minuscula")
+    .matches(/[a-z]/)
+    .withMessage("Debe contener al menos una mayúscula")
+    .matches(/[0-9]/)
+    .withMessage("Debe contener al menos un numero"),
+
+  body("role")
+    .default("user")
+    .isIn(["admin", "user"])
+    .withMessage("El rol debe ser 'admin' o 'user'"),
 
   body("profile")
     .notEmpty()
@@ -79,11 +86,18 @@ export const registerValidation = [
     .withMessage("El apellido debe tener entre 2 y 50 caracteres"),
 
   body("profile.birthDate")
-    .optional({ values: "falsy" })
-    .isISO8601()
-    .withMessage(
-      "La fecha de nacimiento debe tener un formato de fecha válido",
-    ),
+    .optional()
+    .isDate({ format: "YYYY-MM-DD", strictMode: true })
+    .withMessage("La fecha no es valida")
+    .custom((birthDate) => {
+      const fecha = new Date(birthDate);
+      const hoy = new Date();
+
+      if (fecha > hoy) {
+        throw new Error("La fecha no puede ser futura");
+      }
+      return true;
+    }),
 
   body("profile.phone")
     .optional({ values: "falsy" })
@@ -100,7 +114,8 @@ export const loginValidation = [
     .bail()
     .isEmail()
     .withMessage("El email no es válido")
-    .normalizeEmail(),
+    .normalizeEmail()
+    .bail(),
 
   body("password").notEmpty().withMessage("La contraseña es obligatoria"),
 ];
@@ -125,10 +140,18 @@ export const updateSelfProfileValidation = [
     .withMessage("El apellido debe tener entre 2 y 50 caracteres"),
 
   body("birthDate")
-    .optional({ values: "falsy" })
-    .isISO8601()
-    .withMessage("La fecha de nacimiento debe tener un formato válido"),
+    .optional()
+    .isDate({ format: "YYYY-MM-DD", strictMode: true })
+    .withMessage("La fecha no es valida")
+    .custom((birthDate) => {
+      const fecha = new Date(birthDate);
+      const hoy = new Date();
 
+      if (fecha > hoy) {
+        throw new Error("La fecha no puede ser futura");
+      }
+      return true;
+    }),
   body("phone")
     .optional({ values: "falsy" })
     .trim()

@@ -1,17 +1,32 @@
-import express from "express";
+import Router from "express";
 
-import { register, login, logout } from "../controllers/authController.js";
+import {
+  register,
+  login,
+  logout,
+  getProfile,
+  updateProfile,
+} from "../controllers/authController.js";
 
 import {
   registerValidation,
   loginValidation,
+  updateSelfProfileValidation,
 } from "../middlewares/validations/authValidation.js";
 
 import { validate } from "../middlewares/validate.js";
-import { auth } from "../middlewares/auth.js";
+import { authMiddleware } from "../middlewares/auth.middleware.js";
 
-export const authRouter = express.Router();
+export const authRouter = Router();
 
 authRouter.post("/register", registerValidation, validate, register);
 authRouter.post("/login", loginValidation, validate, login);
-authRouter.post("/logout", auth, logout);
+authRouter.get("/profile", authMiddleware, getProfile);
+authRouter.put(
+  "/profile",
+  authMiddleware,
+  updateSelfProfileValidation,
+  validate,
+  updateProfile,
+);
+authRouter.post("/logout", authMiddleware, logout);

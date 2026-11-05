@@ -14,10 +14,6 @@ const categorySchema = new mongoose.Schema(
       trim: true,
       maxlength: 200,
     },
-    deletedAt: {
-      type: Date,
-      default: null,
-    },
   },
   {
     timestamps: true,

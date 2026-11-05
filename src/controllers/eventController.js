@@ -6,8 +6,8 @@ import { User } from "../models/User.js";
 export const getEvents = async (req, res) => {
   try {
     const events = await Event.find({ deleted: false })
-      .populate("category")
-      .populate("creator", "username email");
+      .populate("category", "-_id")
+      .populate("organizer");
 
     return res.status(200).json({
       message: "Eventos obtenidos correctamente",
@@ -22,12 +22,13 @@ export const getEvents = async (req, res) => {
 
 export const getEventById = async (req, res) => {
   try {
+    const { id } = req.params;
     const event = await Event.findOne({
-      _id: req.params.id,
+      _id: id,
       deleted: false,
     })
-      .populate("category")
-      .populate("creator", "username email");
+      .populate("categories", "-_id")
+      .populate("organizer");
 
     if (!event) {
       return res.status(404).json({
@@ -54,10 +55,13 @@ export const getEventById = async (req, res) => {
 
 export const getMyEvents = async (req, res) => {
   try {
+    const { user_id } = req.userLogueado;
     const events = await Event.find({
-      creator: req.user.id,
+      organizer: user_id,
       deleted: false,
-    }).populate("category");
+    })
+      .populate("organizer", "-password")
+      .populate("categories", "-_id");
 
     return res.status(200).json({
       message: "Tus eventos obtenidos correctamente",
@@ -94,21 +98,13 @@ export const createEvent = async (req, res) => {
 
 export const updateEvent = async (req, res) => {
   try {
+    const { id } = req.params;
     const data = matchedData(req, {
       locations: ["body"],
     });
 
-    const filter = {
-      _id: req.params.id,
-      deleted: false,
-    };
-
-    if (req.user.role !== "ADMIN") {
-      filter.creator = req.user.id;
-    }
-
     const event = await Event.findOneAndUpdate(
-      filter,
+      { _id: id, deletedAt: null },
       { $set: data },
       {
         returnDocument: "after",
@@ -127,30 +123,17 @@ export const updateEvent = async (req, res) => {
       resource: event,
     });
   } catch (error) {
-  console.error("Error al actualizar el evento:", error);
-
-  return res.status(500).json({
-    message: "Error al actualizar el evento",
-    error: error.message,
-  });
+    return res.status(500).json({
+      message: "Error al actualizar el evento",
+    });
   }
-}
+};
 
 export const deleteEvent = async (req, res) => {
   try {
-    const filter = {
-      _id: req.params.id,
-      deleted: false,
-    };
-
-    if (req.user.role !== "ADMIN") {
-      filter.creator = req.user.id;
-    }
-
-    const event = await Event.findOneAndUpdate(
-      filter,
-      { $set: { deleted: true } },
-      { returnDocument: "after" },
+    const event = await Event.findOneAndDelete(
+      { _id: req.params.id },
+      { returnDocument: "true" },
     );
 
     if (!event) {

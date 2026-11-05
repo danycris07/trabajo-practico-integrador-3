@@ -1,4 +1,4 @@
-import express from "express";
+import Router from "express";
 
 import {
   getEvents,
@@ -10,33 +10,46 @@ import {
 } from "../controllers/eventController.js";
 
 import {
-  idEventValidation,
   createEventValidation,
   updateEventValidation,
   eventExistsValidation,
 } from "../middlewares/validations/eventValidation.js";
 
 import { validate } from "../middlewares/validate.js";
-import { auth } from "../middlewares/auth.js";
+import { authMiddleware } from "../middlewares/auth.middleware.js";
+import { ownerOrAdminMiddleware } from "../middlewares/ownerOrAdmin.middleware.js";
 
-export const eventRouter = express.Router();
+export const eventRouter = Router();
 
-eventRouter.get("/", auth, getEvents);
+eventRouter.get("/", authMiddleware, getEvents);
 
-eventRouter.get("/my-events", auth, getMyEvents);
+eventRouter.get("/myEvents", authMiddleware, getMyEvents);
 
-eventRouter.get("/:id", auth, idEventValidation, validate, getEventById);
+eventRouter.get("/:id", authMiddleware, getEventById);
 
-eventRouter.post("/", auth, createEventValidation, validate, createEvent);
+eventRouter.post(
+  "/",
+  authMiddleware,
+  createEventValidation,
+  validate,
+  createEvent,
+);
 
 eventRouter.put(
   "/:id",
-  auth,
-  idEventValidation,
+  authMiddleware,
+  ownerOrAdminMiddleware,
   eventExistsValidation,
   updateEventValidation,
   validate,
   updateEvent,
 );
 
-eventRouter.delete("/:id", auth, idEventValidation, validate, deleteEvent);
+eventRouter.delete(
+  "/:id",
+  authMiddleware,
+  ownerOrAdminMiddleware,
+  eventExistsValidation,
+  validate,
+  deleteEvent,
+);

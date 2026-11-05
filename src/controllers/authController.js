@@ -3,50 +3,61 @@ import { User } from "../models/User.js";
 import { hashPassword, comparePassword } from "../helpers/bcrypt.js";
 import { generateToken } from "../helpers/jwt.js";
 
-export const register = async (req, res, next) => {
+export const register = async (req, res) => {
   try {
-    const data = matchedData(req, { locations: ["body"] });
+    const { password, ...restOfData } = matchedData(req, {
+      locations: ["body"],
+    });
+
+    const hashedPassword = await hashPassword(password);
 
     const user = await User.create({
-      username: data.username,
-      email: data.email,
-      password: await hashPassword(data.password),
+      ...restOfData,
+      password: hashedPassword,
     });
 
     return res.status(201).json({
       message: "Usuario registrado correctamente",
-      resource: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-      },
+      resource: user,
     });
   } catch (error) {
-    next(error);
+    return res.status(500).json({ message: "Error en el servidor" });
   }
 };
 
-export const login = async (req, res, next) => {
+export const login = async (req, res) => {
   try {
-    const data = matchedData(req, { locations: ["body"] });
+    const { email, password } = matchedData(req, { locations: ["body"] });
 
     const user = await User.findOne({
-      email: data.email,
-      deleted: false,
+      email,
+      deletedAt: null,
     }).select("+password");
 
-    if (!user || !(await comparePassword(data.password, user.password))) {
+    if (!user) {
       return res.status(401).json({
         message: "Correo o contraseña incorrectos",
       });
     }
 
-    const token = generateToken(user);
+    const validPassword = await comparePassword(password, user.password);
+
+    if (!validPassword) {
+      return res.status(401).json({
+        message: "Correo o contraseña incorrectos",
+      });
+    }
+
+    const token = generateToken({
+      user_id: user._id,
+      username: user.name,
+      email: user.email,
+      role: user.role,
+    });
 
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: true,
       sameSite: "strict",
       maxAge: 24 * 60 * 60 * 1000,
       path: "/",
@@ -59,35 +70,32 @@ export const login = async (req, res, next) => {
         username: user.username,
         email: user.email,
         role: user.role,
+        profile: user.profile,
       },
     });
   } catch (error) {
-    next(error);
+    return res.status(500).json({ message: "Error en el servidor" });
   }
 };
 
-export const logout = async (req, res, next) => {
+export const logout = async (req, res) => {
   try {
-    res.clearCookie("token", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      path: "/",
-    });
+    res.clearCookie("token");
 
     return res.status(200).json({
       message: "Sesión cerrada correctamente",
     });
   } catch (error) {
-    next(error);
+    return res.status(500).json({ message: "Error en el servidor" });
   }
 };
 
-export const getProfile = async (req, res, next) => {
+export const getProfile = async (req, res) => {
   try {
+    const { user_id } = req.userLogueado;
     const user = await User.findOne({
-      _id: req.user.id,
-      deleted: false,
+      _id: user_id,
+      deletedAt: null,
     });
 
     if (!user) {
@@ -101,6 +109,36 @@ export const getProfile = async (req, res, next) => {
       resource: user,
     });
   } catch (error) {
-    next(error);
+    return res.status(500).json({ message: "Error en el servidor" });
+  }
+};
+
+export const updateProfile = async (req, res) => {
+  try {
+    const profileData = matchedData(req, { locations: ["body"] });
+
+    // Se actualizan de forma atómica los campos dentro de profile usando la notación de punto
+    //$set sirve para actualizar campos que se enviaron sin afectar otros
+    const { user_id } = req.userLogueado;
+
+    const userExist = await UserModel.findOne({ _id: user_id });
+
+    const newProfile = {
+      ...userExist.profile,
+      ...profileData.profile,
+    };
+
+    const updatedProfile = await User.findOneAndUpdate(
+      { _id: user_id, deletedAt: null },
+      { $set: { profile: profileData } },
+      { returnDocument: "after", runValidators: true },
+    );
+
+    return res.status(200).json({
+      message: "Perfil actualizado correctamente",
+      resource: updatedProfile,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Error en el servidor" });
   }
 };

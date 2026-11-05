@@ -20,7 +20,6 @@ export const userExistsValidation = [
     }),
 ];
 
-
 export const updateUserValidation = [
   body("username")
     .optional()

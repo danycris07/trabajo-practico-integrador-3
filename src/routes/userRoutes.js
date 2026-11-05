@@ -1,4 +1,4 @@
-import express from "express";
+import Router from "express";
 
 import {
   getUsers,
@@ -8,33 +8,32 @@ import {
 } from "../controllers/userController.js";
 
 import {
-  idParamValidation,
   updateUserValidation,
   userExistsValidation,
 } from "../middlewares/validations/userValidation.js";
 
 import { validate } from "../middlewares/validate.js";
-import { auth } from "../middlewares/auth.js";
-import { authorizeRoles } from "../middlewares/authorizeRoles.js";
+import { authMiddleware } from "../middlewares/auth.middleware.js";
+import { adminMiddleware } from "../middlewares/admin.middleware.js";
+import { ownerOrAdminMiddleware } from "../middlewares/ownerOrAdmin.middleware.js";
 
-export const userRouter = express.Router();
+export const userRouter = Router();
 
-userRouter.get("/", auth, authorizeRoles("ADMIN"), getUsers);
+userRouter.get("/", authMiddleware, adminMiddleware, getUsers);
 
 userRouter.get(
   "/:id",
-  auth,
-  authorizeRoles("ADMIN"),
-  idParamValidation,
+  authMiddleware,
+  adminMiddleware,
+  userExistsValidation,
   validate,
   getUserById,
 );
 
 userRouter.put(
   "/:id",
-  auth,
-  authorizeRoles("ADMIN"),
-  idParamValidation,
+  authMiddleware,
+  adminMiddleware,
   userExistsValidation,
   updateUserValidation,
   validate,
@@ -43,9 +42,9 @@ userRouter.put(
 
 userRouter.delete(
   "/:id",
-  auth,
-  authorizeRoles("ADMIN"),
-  idParamValidation,
+  authMiddleware,
+  adminMiddleware,
+  userExistsValidation,
   validate,
   deleteUser,
 );

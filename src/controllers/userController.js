@@ -1,27 +1,27 @@
 import { matchedData } from "express-validator";
 import { User } from "../models/User.js";
 import { Event } from "../models/Event.js";
-import { hashPassword } from "../helpers/bcrypt.js";
 
 export const getUsers = async (req, res, next) => {
   try {
-    const users = await User.find({ deleted: false });
+    const users = await User.find({ deletedAt: null }).populate("events");
 
     return res.status(200).json({
       message: "Usuarios obtenidos correctamente",
       resource: users,
     });
   } catch (error) {
-    next(error);
+    return res.status(500).json({ message: "Error interno en el servidor" });
   }
 };
 
 export const getUserById = async (req, res, next) => {
   try {
+    const { id } = req.params.id;
     const user = await User.findOne({
-      _id: req.params.id,
-      deleted: false,
-    });
+      _id: id,
+      deletedAt: null,
+    }).populate("events");
 
     if (!user) {
       return res.status(404).json({
@@ -34,21 +34,19 @@ export const getUserById = async (req, res, next) => {
       resource: user,
     });
   } catch (error) {
-    next(error);
+    return res.status(500).json({ message: "Error interno en el servidor" });
   }
 };
 
 export const updateUser = async (req, res, next) => {
   try {
     const data = matchedData(req, { locations: ["body"] });
-
-    if (data.password) {
-      data.password = await hashPassword(data.password);
-    }
+    const { id } = req.params.id;
+    const hashPassword = hashPassword(data.password);
 
     const user = await User.findOneAndUpdate(
       {
-        _id: req.params.id,
+        _id: id,
         deleted: false,
       },
       {
@@ -60,51 +58,34 @@ export const updateUser = async (req, res, next) => {
       },
     );
 
-    if (!user) {
-      return res.status(404).json({
-        message: "Usuario no encontrado",
-      });
-    }
-
     return res.status(200).json({
       message: "Usuario actualizado correctamente",
       resource: user,
     });
   } catch (error) {
-    next(error);
+    return res.status(500).json({ message: "Error interno en el servidor" });
   }
 };
 
 export const deleteUser = async (req, res, next) => {
   try {
-    const user = await User.findOne({
-      _id: req.params.id,
-      deleted: false,
-    });
+    const { id } = req.params.id;
+    const user = await User.findByIdAndUpdate(
+      { _id: id },
+      { $set: { deletedAt: new Date() } },
+      { returnDocument: "after" },
+    );
 
     if (!user) {
-      return res.status(404).json({
-        message: "Usuario no encontrado",
-      });
+      return res.status(404).json({ message: "Usuario no encontrado" });
     }
-
-    user.deleted = true;
-    await user.save();
-
-    await Event.updateMany(
-      {
-        creator: user._id,
-        deleted: false,
-      },
-      {
-        $set: { deleted: true },
-      },
-    );
+    await Event.deleteMany({ organizer: id });
 
     return res.status(200).json({
       message: "Usuario y sus eventos eliminados correctamente",
+      user,
     });
   } catch (error) {
-    next(error);
+    return res.status(500).json({ message: "Error interno en el servidor" });
   }
 };

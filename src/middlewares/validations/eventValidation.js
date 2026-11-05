@@ -77,7 +77,6 @@ export const createEventValidation = [
     .isIn(["scheduled", "cancelled", "finished"])
     .withMessage("El estado no es válido"),
 
-
   body("location")
     .notEmpty()
     .withMessage("La ubicación es obligatoria")
@@ -108,26 +107,6 @@ export const createEventValidation = [
     .bail()
     .isLength({ min: 2, max: 50 })
     .withMessage("La ciudad debe tener entre 2 y 50 caracteres"),
-
-  body("organizer")
-    .notEmpty()
-    .withMessage("El organizador es obligatorio")
-    .bail()
-    .isMongoId()
-    .withMessage("El ID del organizador no es válido")
-    .bail()
-    .custom(async (organizerId) => {
-      const user = await User.findOne({
-        _id: organizerId,
-        deletedAt: null,
-      });
-
-      if (!user) {
-        throw new Error("El organizador especificado no existe");
-      }
-
-      return true;
-    }),
 
   body("categories")
     .optional({ values: "falsy" })
@@ -256,24 +235,6 @@ export const updateEventValidation = [
     .withMessage("La ciudad no puede estar vacía")
     .bail()
     .isLength({ min: 2, max: 50 }),
-
-  body("organizer")
-    .optional()
-    .isMongoId()
-    .withMessage("El ID del organizador no es válido")
-    .bail()
-    .custom(async (organizerId) => {
-      const user = await User.findOne({
-        _id: organizerId,
-        deletedAt: null,
-      });
-
-      if (!user) {
-        throw new Error("El organizador especificado no existe");
-      }
-
-      return true;
-    }),
 
   body("categories")
     .optional({ values: "falsy" })

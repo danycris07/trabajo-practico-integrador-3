@@ -11,7 +11,7 @@ export const getCategories = async (req, res, next) => {
       resource: categories,
     });
   } catch (error) {
-    next(error);
+    return res.status(500).json({ message: "Error interno en el servidor" });
   }
 };
 
@@ -20,7 +20,7 @@ export const getCategoryById = async (req, res, next) => {
     const category = await Category.findOne({
       _id: req.params.id,
       deleted: false,
-    });
+    }).populate("events");
 
     if (!category) {
       return res.status(404).json({
@@ -33,36 +33,7 @@ export const getCategoryById = async (req, res, next) => {
       resource: category,
     });
   } catch (error) {
-    next(error);
-  }
-};
-
-export const getCategoryEvents = async (req, res, next) => {
-  try {
-    const category = await Category.findOne({
-      _id: req.params.id,
-      deleted: false,
-    }).populate({
-      path: "events",
-      match: { deleted: false },
-      populate: {
-        path: "creator",
-        select: "username email",
-      },
-    });
-
-    if (!category) {
-      return res.status(404).json({
-        message: "Categoría no encontrada",
-      });
-    }
-
-    return res.status(200).json({
-      message: "Eventos de la categoría obtenidos correctamente",
-      resource: category.events,
-    });
-  } catch (error) {
-    next(error);
+    return res.status(500).json({ message: "Error interno en el servidor" });
   }
 };
 
@@ -77,7 +48,7 @@ export const createCategory = async (req, res, next) => {
       resource: category,
     });
   } catch (error) {
-    next(error);
+    return res.status(500).json({ message: "Error interno en el servidor" });
   }
 };
 
@@ -110,40 +81,26 @@ export const updateCategory = async (req, res, next) => {
       resource: category,
     });
   } catch (error) {
-    next(error);
+    return res.status(500).json({ message: "Error interno en el servidor" });
   }
 };
 
-export const deleteCategory = async (req, res, next) => {
+export const deleteCategory = async (req, res) => {
   try {
-    const category = await Category.findOne({
-      _id: req.params.id,
-      deleted: false,
-    });
+    const { id } = req.params;
 
-    if (!category) {
-      return res.status(404).json({
-        message: "Categoría no encontrada",
-      });
-    }
+    await Event.updateMany({ categories: id }, { $pull: { categories: id } });
 
-    category.deleted = true;
-    await category.save();
-
-    await Event.updateMany(
-      {
-        category: category._id,
-        deleted: false,
-      },
-      {
-        $set: { deleted: true },
-      },
+    const category = await CategoryModel.findByIdAndDelete(
+      { _id: id },
+      { returnDocument: true },
     );
 
-    return res.status(200).json({
-      message: "Categoría y sus eventos eliminados correctamente",
-    });
+    return res
+      .status(200)
+      .json({ msg: "Categoria eliminada exitosamente", category });
   } catch (error) {
-    next(error);
+    console.log(error);
+    return res.status(500).json({ msg: "Error interno en el servidor" });
   }
 };
