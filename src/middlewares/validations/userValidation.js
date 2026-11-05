@@ -103,9 +103,17 @@ export const updateUserValidation = [
 
   body("profile.birthDate")
     .optional({ values: "falsy" })
-    .isISO8601()
-    .withMessage("La fecha de nacimiento debe tener un formato válido"),
+    .isDate({ format: "YYYY-MM-DD", strictMode: true })
+    .withMessage("La fecha de nacimiento debe tener un formato válido")
+    .custom((birthDate) => {
+      const fecha = new Date(birthDate);
+      const hoy = new Date();
 
+      if (fecha > hoy) {
+        throw new Error("La fecha no puede ser futura");
+      }
+      return true;
+    }),
   body("profile.phone")
     .optional({ values: "falsy" })
     .trim()

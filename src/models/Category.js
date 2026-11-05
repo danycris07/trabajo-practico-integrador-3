@@ -23,11 +23,6 @@ const categorySchema = new mongoose.Schema(
   },
 );
 
-categorySchema.index(
-  { name: 1 },
-  { unique: true, partialFilterExpression: { deletedAt: null } },
-);
-
 categorySchema.virtual("events", {
   ref: "Event",
   localField: "_id",

@@ -17,7 +17,7 @@ export const getUsers = async (req, res, next) => {
 
 export const getUserById = async (req, res, next) => {
   try {
-    const { id } = req.params.id;
+    const { id } = req.params;
     const user = await User.findOne({
       _id: id,
       deletedAt: null,
@@ -41,8 +41,7 @@ export const getUserById = async (req, res, next) => {
 export const updateUser = async (req, res, next) => {
   try {
     const data = matchedData(req, { locations: ["body"] });
-    const { id } = req.params.id;
-    const hashPassword = hashPassword(data.password);
+    const { id } = req.params;
 
     const user = await User.findOneAndUpdate(
       {
@@ -69,7 +68,7 @@ export const updateUser = async (req, res, next) => {
 
 export const deleteUser = async (req, res, next) => {
   try {
-    const { id } = req.params.id;
+    const { id } = req.params;
     const user = await User.findByIdAndUpdate(
       { _id: id },
       { $set: { deletedAt: new Date() } },

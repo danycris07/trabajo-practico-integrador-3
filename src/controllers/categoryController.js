@@ -2,9 +2,9 @@ import { matchedData } from "express-validator";
 import { Category } from "../models/Category.js";
 import { Event } from "../models/Event.js";
 
-export const getCategories = async (req, res, next) => {
+export const getCategories = async (req, res) => {
   try {
-    const categories = await Category.find({ deleted: false });
+    const categories = await Category.find();
 
     return res.status(200).json({
       message: "Categorías obtenidas correctamente",
@@ -15,17 +15,12 @@ export const getCategories = async (req, res, next) => {
   }
 };
 
-export const getCategoryById = async (req, res, next) => {
+export const getCategoryById = async (req, res) => {
   try {
-    const category = await Category.findOne({
-      _id: req.params.id,
-      deleted: false,
-    }).populate("events");
+    const category = await Category.findById(req.params.id).populate("events");
 
     if (!category) {
-      return res.status(404).json({
-        message: "Categoría no encontrada",
-      });
+      return res.status(404).json({ message: "Categoría no encontrada" });
     }
 
     return res.status(200).json({
@@ -37,10 +32,9 @@ export const getCategoryById = async (req, res, next) => {
   }
 };
 
-export const createCategory = async (req, res, next) => {
+export const createCategory = async (req, res) => {
   try {
     const data = matchedData(req, { locations: ["body"] });
-
     const category = await Category.create(data);
 
     return res.status(201).json({
@@ -52,28 +46,18 @@ export const createCategory = async (req, res, next) => {
   }
 };
 
-export const updateCategory = async (req, res, next) => {
+export const updateCategory = async (req, res) => {
   try {
     const data = matchedData(req, { locations: ["body"] });
 
-    const category = await Category.findOneAndUpdate(
-      {
-        _id: req.params.id,
-        deleted: false,
-      },
-      {
-        $set: data,
-      },
-      {
-        returnDocument: "after",
-        runValidators: true,
-      },
+    const category = await Category.findByIdAndUpdate(
+      req.params.id,
+      { $set: data },
+      { returnDocument: "after", runValidators: true },
     );
 
     if (!category) {
-      return res.status(404).json({
-        message: "Categoría no encontrada",
-      });
+      return res.status(404).json({ message: "Categoría no encontrada" });
     }
 
     return res.status(200).json({
@@ -89,18 +73,20 @@ export const deleteCategory = async (req, res) => {
   try {
     const { id } = req.params;
 
+
     await Event.updateMany({ categories: id }, { $pull: { categories: id } });
 
-    const category = await CategoryModel.findByIdAndDelete(
-      { _id: id },
-      { returnDocument: true },
-    );
+    const category = await Category.findByIdAndDelete(id);
 
-    return res
-      .status(200)
-      .json({ msg: "Categoria eliminada exitosamente", category });
+    if (!category) {
+      return res.status(404).json({ message: "Categoría no encontrada" });
+    }
+
+    return res.status(200).json({
+      message: "Categoría eliminada exitosamente",
+      resource: category,
+    });
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ msg: "Error interno en el servidor" });
+    return res.status(500).json({ message: "Error interno en el servidor" });
   }
 };

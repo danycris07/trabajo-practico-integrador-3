@@ -50,7 +50,7 @@ export const login = async (req, res) => {
 
     const token = generateToken({
       user_id: user._id,
-      username: user.name,
+      username: user.username,
       email: user.email,
       role: user.role,
     });
@@ -121,7 +121,7 @@ export const updateProfile = async (req, res) => {
     //$set sirve para actualizar campos que se enviaron sin afectar otros
     const { user_id } = req.userLogueado;
 
-    const userExist = await UserModel.findOne({ _id: user_id });
+    const userExist = await User.findOne({ _id: user_id });
 
     const newProfile = {
       ...userExist.profile,
@@ -130,7 +130,7 @@ export const updateProfile = async (req, res) => {
 
     const updatedProfile = await User.findOneAndUpdate(
       { _id: user_id, deletedAt: null },
-      { $set: { profile: profileData } },
+      { $set: { profile: newProfile } },
       { returnDocument: "after", runValidators: true },
     );
 

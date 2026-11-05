@@ -1,6 +1,5 @@
 import { body, param } from "express-validator";
 import { Event } from "../../models/Event.js";
-import { User } from "../../models/User.js";
 import { Category } from "../../models/Category.js";
 
 export const createEventValidation = [
@@ -13,15 +12,10 @@ export const createEventValidation = [
     .withMessage("El título debe tener entre 3 y 150 caracteres")
     .bail()
     .custom(async (title) => {
-      const event = await Event.findOne({
-        title,
-        deletedAt: null,
-      });
-
+      const event = await Event.findOne({ title });
       if (event) {
         throw new Error("Ya existe un evento con ese título");
       }
-
       return true;
     }),
 
@@ -37,15 +31,15 @@ export const createEventValidation = [
     .notEmpty()
     .withMessage("La fecha de inicio es obligatoria")
     .bail()
-    .isISO8601()
-    .withMessage("La fecha de inicio debe tener un formato ISO válido"),
+    .isDate({ format: "YYYY-MM-DD", strictMode: true })
+    .withMessage("La fecha de inicio debe tener el formato YYYY-MM-DD"),
 
   body("endDate")
     .notEmpty()
     .withMessage("La fecha de fin es obligatoria")
     .bail()
-    .isISO8601()
-    .withMessage("La fecha de fin debe tener un formato ISO válido")
+    .isDate({ format: "YYYY-MM-DD", strictMode: true })
+    .withMessage("La fecha de fin debe tener el formato YYYY-MM-DD")
     .bail()
     .custom((endDate, { req }) => {
       const start = new Date(req.body.startDate);
@@ -89,24 +83,21 @@ export const createEventValidation = [
     .notEmpty()
     .withMessage("El lugar (venue) es obligatorio")
     .bail()
-    .isLength({ min: 3, max: 100 })
-    .withMessage("El lugar debe tener entre 3 y 100 caracteres"),
+    .isLength({ min: 3, max: 100 }),
 
   body("location.address")
     .trim()
     .notEmpty()
     .withMessage("La dirección es obligatoria")
     .bail()
-    .isLength({ min: 5, max: 150 })
-    .withMessage("La dirección debe tener entre 5 y 150 caracteres"),
+    .isLength({ min: 5, max: 150 }),
 
   body("location.city")
     .trim()
     .notEmpty()
     .withMessage("La ciudad es obligatoria")
     .bail()
-    .isLength({ min: 2, max: 50 })
-    .withMessage("La ciudad debe tener entre 2 y 50 caracteres"),
+    .isLength({ min: 2, max: 50 }),
 
   body("categories")
     .optional({ values: "falsy" })
@@ -119,11 +110,7 @@ export const createEventValidation = [
           throw new Error(`El ID ${catId} no es un MongoID válido`);
         }
 
-        const category = await Category.findOne({
-          _id: catId,
-          deletedAt: null,
-        });
-
+        const category = await Category.findById(catId);
         if (!category) {
           throw new Error(`La categoría con ID ${catId} no existe`);
         }
@@ -141,13 +128,11 @@ export const updateEventValidation = [
     .withMessage("El título no puede estar vacío")
     .bail()
     .isLength({ min: 3, max: 150 })
-    .withMessage("El título debe tener entre 3 y 150 caracteres")
     .bail()
     .custom(async (title, { req }) => {
       const idEvent = req.params.id;
       const event = await Event.findOne({
         title,
-        deletedAt: null,
         _id: { $ne: idEvent },
       });
 
@@ -164,29 +149,30 @@ export const updateEventValidation = [
     .notEmpty()
     .withMessage("La descripción no puede estar vacía")
     .bail()
-    .isLength({ min: 20 })
-    .withMessage("La descripción debe tener al menos 20 caracteres"),
+    .isLength({ min: 20 }),
 
   body("startDate")
     .optional()
-    .isISO8601()
-    .withMessage("La fecha de inicio debe tener un formato ISO válido"),
+    .isDate({ format: "YYYY-MM-DD", strictMode: true })
+    .withMessage("La fecha de inicio debe tener el formato YYYY-MM-DD"),
 
   body("endDate")
     .optional()
-    .isISO8601()
-    .withMessage("La fecha de fin debe tener un formato ISO válido")
+    .isDate({ format: "YYYY-MM-DD", strictMode: true })
+    .withMessage("La fecha de fin debe tener el formato YYYY-MM-DD")
     .bail()
-    .custom((endDate, { req }) => {
-      if (req.body.startDate) {
-        const start = new Date(req.body.startDate);
-        const end = new Date(endDate);
+    .custom(async (endDate, { req }) => {
+      let start = req.body.startDate;
 
-        if (end <= start) {
-          throw new Error(
-            "La fecha de fin debe ser posterior a la fecha de inicio",
-          );
-        }
+      if (!start && req.params.id) {
+        const event = await Event.findById(req.params.id);
+        if (event) start = event.startDate;
+      }
+
+      if (start && new Date(endDate) <= new Date(start)) {
+        throw new Error(
+          "La fecha de fin debe ser posterior a la fecha de inicio",
+        );
       }
 
       return true;
@@ -216,7 +202,6 @@ export const updateEventValidation = [
     .optional()
     .trim()
     .notEmpty()
-    .withMessage("El lugar no puede estar vacío")
     .bail()
     .isLength({ min: 3, max: 100 }),
 
@@ -224,7 +209,6 @@ export const updateEventValidation = [
     .optional()
     .trim()
     .notEmpty()
-    .withMessage("La dirección no puede estar vacía")
     .bail()
     .isLength({ min: 5, max: 150 }),
 
@@ -232,7 +216,6 @@ export const updateEventValidation = [
     .optional()
     .trim()
     .notEmpty()
-    .withMessage("La ciudad no puede estar vacía")
     .bail()
     .isLength({ min: 2, max: 50 }),
 
@@ -247,11 +230,7 @@ export const updateEventValidation = [
           throw new Error(`El ID ${catId} no es un MongoID válido`);
         }
 
-        const category = await Category.findOne({
-          _id: catId,
-          deletedAt: null,
-        });
-
+        const category = await Category.findById(catId);
         if (!category) {
           throw new Error(`La categoría con ID ${catId} no existe`);
         }
@@ -267,15 +246,10 @@ export const eventExistsValidation = [
     .withMessage("El ID del evento no es válido")
     .bail()
     .custom(async (id) => {
-      const event = await Event.findOne({
-        _id: id,
-        deletedAt: null,
-      });
-
+      const event = await Event.findById(id);
       if (!event) {
         throw new Error("Evento no encontrado");
       }
-
       return true;
     }),
 ];

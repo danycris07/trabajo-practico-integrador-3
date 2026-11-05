@@ -51,9 +51,9 @@ export const registerValidation = [
     .isLength({ min: 8 })
     .withMessage("La contraseña debe tener al menos 8 caracteres")
     .matches(/[A-Z]/)
-    .withMessage("Debe contener al menos una minuscula")
-    .matches(/[a-z]/)
     .withMessage("Debe contener al menos una mayúscula")
+    .matches(/[a-z]/)
+    .withMessage("Debe contener al menos una minuscula")
     .matches(/[0-9]/)
     .withMessage("Debe contener al menos un numero"),
 
@@ -114,14 +114,13 @@ export const loginValidation = [
     .bail()
     .isEmail()
     .withMessage("El email no es válido")
-    .normalizeEmail()
-    .bail(),
+    .normalizeEmail(),
 
   body("password").notEmpty().withMessage("La contraseña es obligatoria"),
 ];
 
 export const updateSelfProfileValidation = [
-  body("firstName")
+  body("profile.firstName")
     .optional()
     .trim()
     .notEmpty()
@@ -130,7 +129,7 @@ export const updateSelfProfileValidation = [
     .isLength({ min: 2, max: 50 })
     .withMessage("El nombre debe tener entre 2 y 50 caracteres"),
 
-  body("lastName")
+  body("profile.lastName")
     .optional()
     .trim()
     .notEmpty()
@@ -139,8 +138,8 @@ export const updateSelfProfileValidation = [
     .isLength({ min: 2, max: 50 })
     .withMessage("El apellido debe tener entre 2 y 50 caracteres"),
 
-  body("birthDate")
-    .optional()
+  body("profile.birthDate")
+    .optional({ values: "falsy" })
     .isDate({ format: "YYYY-MM-DD", strictMode: true })
     .withMessage("La fecha no es valida")
     .custom((birthDate) => {
@@ -152,7 +151,8 @@ export const updateSelfProfileValidation = [
       }
       return true;
     }),
-  body("phone")
+
+  body("profile.phone")
     .optional({ values: "falsy" })
     .trim()
     .isString()
